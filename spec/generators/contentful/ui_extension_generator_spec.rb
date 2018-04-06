@@ -2,12 +2,12 @@
 
 require 'rails_helper'
 require 'rails/generators'
-require 'generators/wcc/contentful/ui_extension_generator'
+require 'generators/contentful/ui_extension_generator'
 
 require 'generator_spec'
 require 'timecop'
 
-RSpec.describe Wcc::Contentful::UiExtensionGenerator, type: :generator do
+RSpec.describe Contentful::UiExtensionGenerator, type: :generator do
   destination Rails.root.join('tmp/generators')
 
   arguments [

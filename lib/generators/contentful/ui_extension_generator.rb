@@ -1,7 +1,7 @@
 
 # frozen_string_literal: true
 
-module Wcc::Contentful
+module Contentful
   class UiExtensionGenerator < Rails::Generators::Base
     source_root File.expand_path('templates', __dir__)
 
