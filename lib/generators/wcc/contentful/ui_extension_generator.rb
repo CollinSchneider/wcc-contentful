@@ -5,8 +5,10 @@ module Wcc::Contentful
   class UiExtensionGenerator < Rails::Generators::Base
     source_root File.expand_path('templates', __dir__)
 
+    argument :attributes, type: :array
+
     def install_npm_dependencies
-      inside('contentful/extensions/slug_generator') do
+      inside("contentful/extensions/#{name}") do
         run 'npm init -y' unless File.exist?('package.json')
         package = JSON.parse(File.read('package.json'))
         deps = package['dependencies'] || {}
@@ -68,7 +70,7 @@ module Wcc::Contentful
     end
 
     def add_support_files
-      dir = 'contentful/extensions/slug_generator'
+      dir = "contentful/extensions/#{name}"
 
       [
         '.gitignore',
@@ -86,14 +88,49 @@ module Wcc::Contentful
     end
 
     def generate_extension_json
-      create_file 'contentful/extensions/slug_generator/extension.json', <<~FILE
+      url = args['url'] && URI.join(URI(args['url']), '/contentful/extensions/', name)
+      url_prop = url && "\"src\": \"#{url}\","
+
+      create_file "contentful/extensions/#{name}/extension.json", <<~FILE
         {
-          "id": "wcc-slug-generator",
-          "name": "Slug generator for pages that are subordinate to other pages",
-          "src": "https://wm-resources.wcc/contentful/extensions/slug_generator",
-          "fieldTypes": ["Symbol"]
+          "id": "#{name}",
+          "name": "#{description || name}",
+          #{url_prop}
+          "fieldTypes": [#{types.map { |t| "\"#{t}\"" }.join(', ')}]
         }
     FILE
+    end
+
+    private
+
+    def name
+      args['name']
+    end
+
+    def description
+      args['description']
+    end
+
+    def types
+      args['types'] || ['Symbol']
+    end
+
+    def args
+      return @ret if @ret
+
+      @ret = {}
+      remaining = []
+      attributes.each do |att|
+        if m = /^([^\:]+)\:(.+)$/.match(att)
+          @ret[m[1]] = m[2]
+        else
+          remaining.push(att)
+        end
+      end
+
+      @ret['name'] ||= remaining.shift
+      @ret['types'] = remaining
+      @ret.freeze
     end
   end
 end

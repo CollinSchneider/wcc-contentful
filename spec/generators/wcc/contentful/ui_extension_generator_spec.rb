@@ -10,6 +10,14 @@ require 'timecop'
 RSpec.describe Wcc::Contentful::UiExtensionGenerator, type: :generator do
   destination Rails.root.join('tmp/generators')
 
+  arguments [
+    'slug-generator',
+    'description:This is a test',
+    'url:https://watermarkresources.org/',
+    'Symbol',
+    'Text'
+  ]
+
   before(:all) do
     Timecop.freeze(Time.parse('2018-01-02T12:03:04'))
     prepare_destination
@@ -20,13 +28,13 @@ RSpec.describe Wcc::Contentful::UiExtensionGenerator, type: :generator do
     Timecop.return
   end
 
-  let(:extension_dir) { File.join(destination_root, 'contentful/extensions/slug_generator') }
+  let(:extension_dir) { File.join(destination_root, 'contentful/extensions/slug-generator') }
 
   it 'should ensure node dependencies are installed' do
     expect(destination_root).to have_structure {
       directory 'contentful' do
         directory 'extensions' do
-          directory 'slug_generator' do
+          directory 'slug-generator' do
             file 'package.json' do
               contains '"webpack": "^4.5"'
             end
@@ -70,10 +78,10 @@ RSpec.describe Wcc::Contentful::UiExtensionGenerator, type: :generator do
   it 'should generate extension.json' do
     expect(extension_dir).to have_structure {
       file 'extension.json' do
-        contains '"id": "wcc-slug-generator"'
-        contains '"name": "Slug generator for pages that are subordinate to other pages"'
-        contains '"fieldTypes": ["Symbol"]'
-        contains '"src": "https://wm-resources.wcc/contentful/extensions/slug_generator"'
+        contains '"id": "slug-generator"'
+        contains '"name": "This is a test"'
+        contains '"src": "https://watermarkresources.org/contentful/extensions/slug-generator"'
+        contains '"fieldTypes": ["Symbol", "Text"]'
       end
     }
   end
