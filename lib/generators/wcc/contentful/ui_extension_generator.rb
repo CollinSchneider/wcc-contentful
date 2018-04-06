@@ -7,6 +7,39 @@ module Wcc::Contentful
 
     argument :attributes, type: :array
 
+    def validate_and_prompt_for_args
+      unless name
+        given_name = ask('What do you want to name this UI extension?: ')
+        until given_name && /[\w\-]+/.match(given_name)
+          say('The name should contain only letters, numbers, and hyphens.')
+          given_name = ask('What do you want to name this UI extension?: ')
+        end
+        args['name'] = given_name
+      end
+
+      unless description
+        args['description'] = ask('Give the UI extension a description (leave blank to skip): ')
+      end
+
+      unless url
+        given_url = ask('What is the base URL of this app?: ')
+        until given_url && /^http(s)?\:\/\/.+/i.match(given_url)
+          say('The base URL should begin with http(s)')
+          given_url = ask('What is the base URL of this app?: ')
+        end
+        args['url'] = given_url
+      end
+
+      return if types&.any?
+      given_types = ask('What field type(s) should this extension apply to? (comma-separated list): ')
+      until (parsed_types = given_types&.split(/\,\s*/)) && parsed_types.any?
+        say('Please specify at least one type, like "Symbol, Text"')
+        given_types = ask('What field type(s) should this extension apply to? '\
+        '(comma-separated list): ')
+      end
+      args['types'] = parsed_types
+    end
+
     def install_npm_dependencies
       inside("contentful/extensions/#{name}") do
         run 'npm init -y' unless File.exist?('package.json')
@@ -88,8 +121,8 @@ module Wcc::Contentful
     end
 
     def generate_extension_json
-      url = args['url'] && URI.join(URI(args['url']), '/contentful/extensions/', name)
-      url_prop = url && "\"src\": \"#{url}\","
+      parsed_url = url && URI.join(URI(url), '/contentful/extensions/', name)
+      url_prop = url && "\"src\": \"#{parsed_url}\","
 
       create_file "contentful/extensions/#{name}/extension.json", <<~FILE
         {
@@ -112,7 +145,11 @@ module Wcc::Contentful
     end
 
     def types
-      args['types'] || ['Symbol']
+      args['types']
+    end
+
+    def url
+      args['url']
     end
 
     def args
@@ -130,7 +167,7 @@ module Wcc::Contentful
 
       @ret['name'] ||= remaining.shift
       @ret['types'] = remaining
-      @ret.freeze
+      @ret
     end
   end
 end
