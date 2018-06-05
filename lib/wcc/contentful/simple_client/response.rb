@@ -14,12 +14,15 @@ class WCC::Contentful::SimpleClient
     end
 
     def raw
+      return unless body
       @raw ||= JSON.parse(body)
+    rescue JSON::ParserError
+      @raw = {}
     end
     alias_method :to_json, :raw
 
     def error_message
-      raw.dig('message') || "#{code}: #{raw_response.message}"
+      raw.dig('message') || "#{code}: #{raw_response.try(:message)}"
     end
 
     def next_page?

@@ -62,7 +62,13 @@ module WCC::Contentful
     client = Services.instance.management_client ||
       Services.instance.client
 
-    @content_types = client.content_types(limit: 1000).items
+    @content_types =
+      begin
+        client.content_types(limit: 1000).items
+      rescue WCC::Contentful::SimpleClient::ApiError => e
+        raise e unless File.exist?('db/contentful-schema.json')
+        JSON.parse(File.read('db/contentful-schema.json'))['contentTypes']
+      end
 
     indexer =
       ContentTypeIndexer.new.tap do |ixr|

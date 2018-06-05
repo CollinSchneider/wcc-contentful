@@ -240,6 +240,28 @@ RSpec.describe WCC::Contentful, :vcr do
       end
     end
 
+    context 'with connection error' do
+      it 'should populate models from db/contentful_schema.json' do
+        stub_request(:get, /contentful/).to_return(status: 503)
+
+        allow(File).to receive(:exist?).and_call_original
+        allow(File).to receive(:read).and_call_original
+
+        schema = load_fixture('contentful/contentful-schema.json')
+        expect(File).to receive(:exist?).with('db/contentful-schema.json')
+          .and_return(true)
+        expect(File).to receive(:read).with('db/contentful-schema.json')
+          .and_return(schema)
+
+        # act
+        WCC::Contentful.init!
+
+        # assert
+        content_type = WCC::Contentful::Model::Page.content_type
+        expect(content_type).to eq('page')
+      end
+    end
+
     context 'content_delivery = direct' do
       before(:each) do
         WCC::Contentful.configure do |config|
